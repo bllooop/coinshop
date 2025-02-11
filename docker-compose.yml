@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  coinshop:
+    build: 
+      context: .
+      dockerfile: Dockerfile  
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    environment:
+      - DB_PASSWORD=54321
+      
+  db:
+    container_name: db
+    restart: always
+    image: postgres:latest
+    volumes: 
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=54321
+    ports:
+      - 5436:5432
+
+volumes:
+  pgdata:

@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"context"
 	"fmt"
 
 	logger "github.com/bllooop/coinshop/pkg/logging"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type Config struct {
@@ -24,10 +24,12 @@ const (
 	purchaseTable     = "purchases"
 )
 
-func NewPostgresDB(cfg Config) (*pgxpool.Pool, error) {
+func NewPostgresDB(cfg Config) (*sqlx.DB, error) {
 	logger.Log.Info().Msg("Подключение к базе данных")
-	db, err := pgxpool.New(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.DBname, cfg.SSLMode))
-
+	db, err := sqlx.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.DBname, cfg.SSLMode))
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.DBname, cfg.SSLMode)
+	logger.Log.Info().Msgf("Connecting to database at: %s", connStr)
 	if err != nil {
 		return nil, err
 	}

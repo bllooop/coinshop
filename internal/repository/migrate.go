@@ -12,7 +12,6 @@ import (
 func RunMigrate(cfg Config, migratePath string) error {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.DBname, cfg.SSLMode)
-
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return err

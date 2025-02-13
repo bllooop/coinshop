@@ -2,7 +2,7 @@ package repository
 
 import (
 	"github.com/bllooop/coinshop/internal/domain"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jmoiron/sqlx"
 )
 
 type Authorization interface {
@@ -11,7 +11,7 @@ type Authorization interface {
 }
 type Shop interface {
 	BuyItem(userid int, name string) (int, error)
-	SendCoin(input domain.Transactions) (int, error)
+	SendCoin(userid int, input domain.Transactions) (int, error)
 }
 
 type Repository struct {
@@ -19,9 +19,9 @@ type Repository struct {
 	Shop
 }
 
-func NewRepository(pg *pgxpool.Pool) *Repository {
+func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
-		Authorization: NewAuthPostgres(pg),
-		Shop:          NewShopPostgres(pg),
+		Authorization: NewAuthPostgres(db),
+		Shop:          NewShopPostgres(db),
 	}
 }

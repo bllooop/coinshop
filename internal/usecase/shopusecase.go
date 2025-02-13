@@ -15,8 +15,8 @@ func NewShopUsecase(repo *repository.Repository) *ShopUsecase {
 	}
 }
 
-func (s *ShopUsecase) SendCoin(input domain.Transactions) (int, error) {
-	return s.repo.SendCoin(input)
+func (s *ShopUsecase) SendCoin(userid int, input domain.Transactions) (int, error) {
+	return s.repo.SendCoin(userid, input)
 }
 
 func (s *ShopUsecase) BuyItem(userid int, name string) (int, error) {

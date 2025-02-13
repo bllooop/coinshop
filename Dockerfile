@@ -9,6 +9,6 @@ COPY . .
 RUN go mod download
 RUN go build -o coinshop ./cmd/main.go
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD ["./musiclibrary"]
+CMD ["./coinshop"]

@@ -11,11 +11,13 @@ func (h *Handler) signUp(c *gin.Context) {
 	var input domain.User
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
-	*input.Coins = 1000
+	defaultCoins := 1000
+	input.Coins = &defaultCoins
 	id, err := h.usecases.Authorization.CreateUser(input)
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, map[string]interface{}{
@@ -31,7 +33,7 @@ func (h *Handler) signIn(c *gin.Context) {
 	}
 	token, err := h.usecases.Authorization.GenerateToken(input.UserName, input.Password)
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, map[string]interface{}{

@@ -10,28 +10,32 @@ import (
 
 const (
 	authorizationHeader = "Authorization"
-	userId              = "userId"
+	userCtx             = "userId"
 )
 
-func (h *Handler) AuthMiddleware(c *gin.Context) {
+func (h *Handler) authIdentity(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
 		newErrorResponse(c, http.StatusUnauthorized, "Пустой заголовок авторизации")
+		c.Abort()
 		return
 	}
 	headerSplit := strings.Split(header, " ")
 	if len(headerSplit) != 2 {
 		newErrorResponse(c, http.StatusUnauthorized, "Некорректный ввод токена")
+		c.Abort()
 		return
 	}
-	shopId, err := h.usecases.Authorization.ParseToken(headerSplit[1])
+	userId, err := h.usecases.Authorization.ParseToken(headerSplit[1])
 	if err != nil {
 		newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		c.Abort()
+		return
 	}
-	c.Set(userId, shopId)
+	c.Set(userCtx, userId)
 }
 func getUserId(c *gin.Context) (int, error) {
-	id, ok := c.Get(userId)
+	id, ok := c.Get(userCtx)
 	if !ok {
 		return 0, errors.New("ID пользователя не найдено")
 	}

@@ -19,6 +19,7 @@ func (h *Handler) sendCoin(c *gin.Context) {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	//userId := 1
 	var input domain.Transactions
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -28,8 +29,7 @@ func (h *Handler) sendCoin(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "Значения получателя и суммы не могут быть отрицательными")
 		return
 	}
-	input.Source = &userId
-	id, err := h.usecases.Shop.SendCoin(input)
+	id, err := h.usecases.Shop.SendCoin(userId, input)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -55,12 +55,14 @@ func (h *Handler) buyItem(c *gin.Context) {
 	name := c.Param("name")
 	logger.Log.Debug().Msgf("Успешно прочитаны name: %s", name)
 
-	lists, err := h.usecases.Shop.BuyItem(userId, name)
+	id, err := h.usecases.Shop.BuyItem(userId, name)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	logger.Log.Info().Msg("Received response for get songs / Получен ответ на получение песен")
+	logger.Log.Info().Msg("Получен ответ на покупку товара")
 
-	c.JSON(http.StatusOK, lists)
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"id": id,
+	})
 }

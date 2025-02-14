@@ -1,6 +1,8 @@
 package api
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/bllooop/coinshop/internal/domain"
@@ -19,13 +21,12 @@ func (h *Handler) sendCoin(c *gin.Context) {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	//userId := 1
 	var input domain.Transactions
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if input.Destination < 1 || input.Amount < 0 {
+	if input.Destination == "" || input.Amount < 0 {
 		newErrorResponse(c, http.StatusBadRequest, "Значения получателя и суммы не могут быть отрицательными")
 		return
 	}
@@ -65,4 +66,29 @@ func (h *Handler) buyItem(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]interface{}{
 		"id": id,
 	})
+}
+
+func (h *Handler) getInfo(c *gin.Context) {
+	logger.Log.Info().Msg("Получили запрос на информацию о пользователе")
+	if c.Request.Method != http.MethodGet {
+		newErrorResponse(c, http.StatusBadRequest, "Требуется запрос GET")
+		return
+	}
+	userId, err := getUserId(c)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	lists, err := h.usecases.Shop.GetUserSummary(userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			newErrorResponse(c, http.StatusNotFound, "User not found")
+			return
+		}
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	logger.Log.Info().Msg("Получен ответ на запрос информации о пользователе")
+
+	c.JSON(http.StatusOK, lists)
 }

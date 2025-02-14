@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/bllooop/coinshop/internal/domain"
@@ -27,11 +29,16 @@ func (r *AuthPostgres) CreateUser(user domain.User) (int, error) {
 	return id, nil
 }
 
-func (r *AuthPostgres) SignUser(username, password string) (domain.User, error) {
+func (r *AuthPostgres) SignUser(username string) (domain.User, error) {
 	var user domain.User
-	query := fmt.Sprintf(`SELECT id,username,password FROM %s WHERE username=$1 AND password=$2`, userListTable)
-	res := r.db.QueryRowx(query, username, password)
+	query := fmt.Sprintf(`SELECT id,username,password FROM %s WHERE username=$1`, userListTable)
+	res := r.db.QueryRowx(query, username)
 	err := res.Scan(&user.Id, &user.UserName, &user.Password)
-
-	return user, err
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, errors.New("user not found")
+		}
+		return domain.User{}, err
+	}
+	return user, nil
 }

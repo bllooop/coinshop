@@ -1,14 +1,13 @@
 package usecase
 
 import (
-	"crypto/sha1"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/bllooop/coinshop/internal/domain"
 	"github.com/bllooop/coinshop/internal/repository"
 	"github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthUsecase struct {
@@ -33,34 +32,32 @@ type tokenClaims struct {
 }
 
 func (s *AuthUsecase) CreateUser(user domain.User) (int, error) {
+	var err error
+	user.Password, err = hashPassword(user.Password)
+	if err != nil {
+		return 0, err
+	}
 	return s.repo.CreateUser(user)
 }
-
-func (s *AuthUsecase) GenerateToken(username, password string) (string, error) {
-	user, err := s.repo.SignUser(username, password)
+func (s *AuthUsecase) SignUser(username, password string) (domain.User, error) {
+	user, err := s.repo.SignUser(username)
 	if err != nil {
-		return "", err
+		return domain.User{}, err
 	}
-
+	if !verifyPassword(user.Password, password) {
+		return domain.User{}, errors.New("invalid credentials")
+	}
+	return user, nil
+}
+func (s *AuthUsecase) GenerateToken(userId int) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(tokenTTL).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
-		user.Id,
+		userId,
 	})
 	return token.SignedString([]byte(signingKey))
-	/*
-			token := jwt.New(jwt.SigningMethodHS256)
-		claims := token.Claims.(jwt.MapClaims)
-		claims["user_id"] = user.Id
-		claims["exp"] = time.Now().Add(time.Hour * 24).Unix() // Token expiration time
-		tokenString, err := token.SignedString(jwtKey)
-		if err != nil {
-			return "", err
-		}
-		return tokenString, nil
-	*/
 }
 
 func (s *AuthUsecase) ParseToken(accessToken string) (int, error) {
@@ -83,9 +80,12 @@ func (s *AuthUsecase) ParseToken(accessToken string) (int, error) {
 	return claims.UserId, nil
 }
 
-func generatePasswordHash(password string) string {
-	hash := sha1.New()
-	hash.Write([]byte(password))
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
 
-	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
+func verifyPassword(hashedPassword, password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return err == nil
 }

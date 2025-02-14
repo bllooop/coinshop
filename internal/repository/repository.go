@@ -7,11 +7,12 @@ import (
 
 type Authorization interface {
 	CreateUser(user domain.User) (int, error)
-	SignUser(username, password string) (domain.User, error)
+	SignUser(username string) (domain.User, error)
 }
 type Shop interface {
 	BuyItem(userid int, name string) (int, error)
-	SendCoin(userid int, input domain.Transactions) (int, error)
+	SendCoin(input domain.Transactions) (int, error)
+	GetUserSummary(userID int) (*domain.UserSummary, error)
 }
 
 type Repository struct {

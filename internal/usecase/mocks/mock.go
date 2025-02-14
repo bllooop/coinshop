@@ -56,18 +56,18 @@ func (mr *MockAuthorizationMockRecorder) CreateUser(user any) *gomock.Call {
 }
 
 // GenerateToken mocks base method.
-func (m *MockAuthorization) GenerateToken(username, password string) (string, error) {
+func (m *MockAuthorization) GenerateToken(userId int) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateToken", username, password)
+	ret := m.ctrl.Call(m, "GenerateToken", userId)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GenerateToken indicates an expected call of GenerateToken.
-func (mr *MockAuthorizationMockRecorder) GenerateToken(username, password any) *gomock.Call {
+func (mr *MockAuthorizationMockRecorder) GenerateToken(userId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthorization)(nil).GenerateToken), username, password)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthorization)(nil).GenerateToken), userId)
 }
 
 // ParseToken mocks base method.
@@ -83,6 +83,21 @@ func (m *MockAuthorization) ParseToken(accessToken string) (int, error) {
 func (mr *MockAuthorizationMockRecorder) ParseToken(accessToken any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParseToken", reflect.TypeOf((*MockAuthorization)(nil).ParseToken), accessToken)
+}
+
+// SignUser mocks base method.
+func (m *MockAuthorization) SignUser(username, password string) (domain.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignUser", username, password)
+	ret0, _ := ret[0].(domain.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignUser indicates an expected call of SignUser.
+func (mr *MockAuthorizationMockRecorder) SignUser(username, password any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignUser", reflect.TypeOf((*MockAuthorization)(nil).SignUser), username, password)
 }
 
 // MockShop is a mock of Shop interface.
@@ -122,6 +137,21 @@ func (m *MockShop) BuyItem(userid int, name string) (int, error) {
 func (mr *MockShopMockRecorder) BuyItem(userid, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuyItem", reflect.TypeOf((*MockShop)(nil).BuyItem), userid, name)
+}
+
+// GetUserSummary mocks base method.
+func (m *MockShop) GetUserSummary(userID int) (*domain.UserSummary, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserSummary", userID)
+	ret0, _ := ret[0].(*domain.UserSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserSummary indicates an expected call of GetUserSummary.
+func (mr *MockShopMockRecorder) GetUserSummary(userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserSummary", reflect.TypeOf((*MockShop)(nil).GetUserSummary), userID)
 }
 
 // SendCoin mocks base method.

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
@@ -30,10 +31,10 @@ func TestHandler_sendCoin(t *testing.T) {
 	}{
 		{
 			name:        "OK",
-			inputBody:   `{"destination":2, "amount":10}`,
+			inputBody:   `{"destination":"name", "amount":10}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
-				Destination: 2,
+				Destination: "name",
 				Amount:      10,
 			},
 			mockBehavior: func(s *mock_usecase.MockShop, userid int, transactions domain.Transactions) {
@@ -44,10 +45,10 @@ func TestHandler_sendCoin(t *testing.T) {
 		},
 		{
 			name:        "Error during execution in service",
-			inputBody:   `{"destination":2, "amount":10}`,
+			inputBody:   `{"destination":"name", "amount":10}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
-				Destination: 2,
+				Destination: "name",
 				Amount:      10,
 			},
 			mockBehavior: func(s *mock_usecase.MockShop, userid int, transactions domain.Transactions) {
@@ -58,11 +59,11 @@ func TestHandler_sendCoin(t *testing.T) {
 		},
 		{
 			name:        "Bad input",
-			inputBody:   `{"amount":-100, "destination":1}`,
+			inputBody:   `{"amount":-100, "destination":"name"}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
 				Amount:      -100,
-				Destination: 1,
+				Destination: "name",
 			},
 			mockBehavior:         func(s *mock_usecase.MockShop, userid int, transactions domain.Transactions) {},
 			expectedStatusCode:   400,
@@ -161,6 +162,106 @@ func TestHandler_buyItem(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest("PUT", "/api/buy/"+testCase.inputName, nil)
+
+			r.ServeHTTP(w, req)
+			assert.Equal(t, w.Code, testCase.expectedStatusCode)
+			if json.Valid([]byte(testCase.expectedResponseBody)) {
+				assert.JSONEq(t, testCase.expectedResponseBody, w.Body.String())
+			} else {
+				assert.Equal(t, testCase.expectedResponseBody, strings.TrimSpace(w.Body.String()))
+			}
+		})
+	}
+}
+func TestHandler_infoSummary(t *testing.T) {
+	type mockBehavior func(s *mock_usecase.MockShop, userId int)
+
+	testTable := []struct {
+		name                 string
+		inputName            string
+		inputUserId          int
+		mockBehavior         mockBehavior
+		expectedStatusCode   int
+		expectedResponseBody string
+	}{
+		{
+			name:        "OK",
+			inputUserId: 1,
+			mockBehavior: func(s *mock_usecase.MockShop, userId int) {
+				s.EXPECT().GetUserSummary(userId).Return(&domain.UserSummary{
+					UserName:       "testuser",
+					Coins:          1000,
+					PurchasedItems: []domain.PurchasedItem{},
+					TransactionsSummary: domain.TransactionsSummary{
+						ReceivedCoins: []domain.Transactions{},
+						SentCoins:     []domain.Transactions{},
+					},
+				}, nil)
+			},
+			expectedStatusCode: 200,
+			expectedResponseBody: `{
+				"username": "testuser",
+				"coins": 1000,
+				"purchased_items": [],
+				"transactions_summary": {
+					"received_coins": [],
+					"sent_coins": []
+				}
+			}`,
+		},
+		{
+			name:        "Database Failure",
+			inputUserId: 1,
+			mockBehavior: func(s *mock_usecase.MockShop, userId int) {
+				s.EXPECT().GetUserSummary(userId).Return(&domain.UserSummary{
+					UserName:       "testuser",
+					Coins:          1000,
+					PurchasedItems: []domain.PurchasedItem{}, // Example empty slice
+					TransactionsSummary: domain.TransactionsSummary{
+						ReceivedCoins: []domain.Transactions{},
+						SentCoins:     []domain.Transactions{},
+					},
+				}, errors.New("database is down"))
+			},
+			expectedStatusCode:   500,
+			expectedResponseBody: `{"message":"database is down"}`,
+		},
+		{
+			name:        "User not found",
+			inputUserId: 9999,
+			mockBehavior: func(s *mock_usecase.MockShop, userId int) {
+				s.EXPECT().GetUserSummary(userId).Return(&domain.UserSummary{
+					UserName:       "testuser",
+					Coins:          1000,
+					PurchasedItems: []domain.PurchasedItem{}, // Example empty slice
+					TransactionsSummary: domain.TransactionsSummary{
+						ReceivedCoins: []domain.Transactions{},
+						SentCoins:     []domain.Transactions{},
+					},
+				}, sql.ErrNoRows)
+			},
+			expectedStatusCode:   404,
+			expectedResponseBody: `{"message":"User not found"}`,
+		},
+	}
+	for _, testCase := range testTable {
+		t.Run(testCase.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := mock_usecase.NewMockShop(c)
+			testCase.mockBehavior(repo, testCase.inputUserId)
+
+			usecases := &usecase.Usecase{Shop: repo}
+			handler := Handler{usecases}
+			r := gin.New()
+			r.GET("/api/info", func(c *gin.Context) {
+				c.Set("userId", testCase.inputUserId)
+				handler.getInfo(c)
+			})
+
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/api/info", nil)
 
 			r.ServeHTTP(w, req)
 			assert.Equal(t, w.Code, testCase.expectedStatusCode)

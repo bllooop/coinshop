@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"time"
+
 	"github.com/bllooop/coinshop/internal/domain"
 	"github.com/bllooop/coinshop/internal/repository"
 )
@@ -16,9 +18,16 @@ func NewShopUsecase(repo *repository.Repository) *ShopUsecase {
 }
 
 func (s *ShopUsecase) SendCoin(userid int, input domain.Transactions) (int, error) {
-	return s.repo.SendCoin(userid, input)
+	input.Source = &userid
+	timestamp := time.Now()
+	input.Timestamp = &timestamp
+	return s.repo.SendCoin(input)
 }
 
 func (s *ShopUsecase) BuyItem(userid int, name string) (int, error) {
 	return s.repo.BuyItem(userid, name)
+}
+
+func (s *ShopUsecase) GetUserSummary(userID int) (*domain.UserSummary, error) {
+	return s.repo.GetUserSummary(userID)
 }

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -84,7 +85,6 @@ func TestAuthPostgres_SignUser(t *testing.T) {
 
 	type args struct {
 		username string
-		password string
 	}
 
 	tests := []struct {
@@ -99,10 +99,10 @@ func TestAuthPostgres_SignUser(t *testing.T) {
 			mock: func() {
 				rows := sqlmock.NewRows([]string{"id", "username", "password"}).
 					AddRow(1, "test", "password")
-				mock.ExpectQuery("SELECT (.+) FROM userlist").
-					WithArgs("test", "password").WillReturnRows(rows)
+				mock.ExpectQuery(fmt.Sprintf("SELECT (.+) FROM %s", userListTable)).
+					WithArgs("test").WillReturnRows(rows)
 			},
-			input: args{"test", "password"},
+			input: args{"test"},
 			want: domain.User{
 				Id:       1,
 				UserName: "test",
@@ -113,10 +113,10 @@ func TestAuthPostgres_SignUser(t *testing.T) {
 			name: "Not Found",
 			mock: func() {
 				rows := sqlmock.NewRows([]string{"id", "username", "password", "coins"})
-				mock.ExpectQuery("SELECT (.+) FROM userlist").
-					WithArgs("not", "found").WillReturnRows(rows)
+				mock.ExpectQuery(fmt.Sprintf("SELECT (.+) FROM %s", userListTable)).
+					WithArgs("not").WillReturnRows(rows)
 			},
-			input:   args{"not", "found"},
+			input:   args{"not"},
 			wantErr: true,
 		},
 	}
@@ -125,7 +125,7 @@ func TestAuthPostgres_SignUser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.mock()
 
-			got, err := r.SignUser(tt.input.username, tt.input.password)
+			got, err := r.SignUser(tt.input.username)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

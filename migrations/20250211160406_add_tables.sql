@@ -17,7 +17,7 @@ CREATE TABLE transactions
 (
     id serial PRIMARY KEY,
     source int NOT NULL,
-    destination int NOT NULL,
+    destination varchar(255) NOT NULL,
     amount int NOT NULL CHECK (amount > 0),
     transaction_time TIMESTAMP DEFAULT now(), 
     FOREIGN KEY (source) REFERENCES userlist(id) ON DELETE CASCADE,
@@ -37,8 +37,8 @@ CREATE TABLE purchases
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE purchases;
+DROP TABLE transactions;
 DROP TABLE shop;
 DROP TABLE userlist;
-DROP TABLE transactions;
-DROP TABLE purchases;
 -- +goose StatementEnd

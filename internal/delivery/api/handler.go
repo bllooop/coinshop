@@ -33,7 +33,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		//authorized.Use(h.AuthMiddleware)
 		{
 			authorized.POST("/sendCoin", h.sendCoin)
-			//authorized.GET("/info", h.getInfo)
+			authorized.GET("/info", h.getInfo)
 			authorized.PUT("/buy/:item", h.buyItem)
 		}
 	}

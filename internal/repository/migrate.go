@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	logger "github.com/bllooop/coinshop/pkg/logging"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose"
 )
 
 func RunMigrate(cfg Config, migratePath string) error {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.DBname, cfg.SSLMode)
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		return err
 	}

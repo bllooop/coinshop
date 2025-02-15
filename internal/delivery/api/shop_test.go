@@ -31,11 +31,11 @@ func TestHandler_sendCoin(t *testing.T) {
 	}{
 		{
 			name:        "OK",
-			inputBody:   `{"destination":"name", "amount":10}`,
+			inputBody:   `{"destination_username":"name", "amount":10}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
-				Destination: "name",
-				Amount:      10,
+				DestinationUsername: "name",
+				Amount:              10,
 			},
 			mockBehavior: func(s *mock_usecase.MockShop, userid int, transactions domain.Transactions) {
 				s.EXPECT().SendCoin(userid, transactions).Return(1, nil)
@@ -45,11 +45,11 @@ func TestHandler_sendCoin(t *testing.T) {
 		},
 		{
 			name:        "Error during execution in service",
-			inputBody:   `{"destination":"name", "amount":10}`,
+			inputBody:   `{"destination_username":"name", "amount":10}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
-				Destination: "name",
-				Amount:      10,
+				DestinationUsername: "name",
+				Amount:              10,
 			},
 			mockBehavior: func(s *mock_usecase.MockShop, userid int, transactions domain.Transactions) {
 				s.EXPECT().SendCoin(userid, transactions).Return(0, errors.New("Internal Server Error"))
@@ -59,15 +59,15 @@ func TestHandler_sendCoin(t *testing.T) {
 		},
 		{
 			name:        "Bad input",
-			inputBody:   `{"amount":-100, "destination":"name"}`,
+			inputBody:   `{"amount":-100, "destination_username":"name"}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
-				Amount:      -100,
-				Destination: "name",
+				Amount:              -100,
+				DestinationUsername: "name",
 			},
 			mockBehavior:         func(s *mock_usecase.MockShop, userid int, transactions domain.Transactions) {},
 			expectedStatusCode:   400,
-			expectedResponseBody: `{"message":"Значения получателя и суммы не могут быть отрицательными"}`,
+			expectedResponseBody: `{"message":"Значения получателя и суммы не могут быть отрицательными или пустыми"}`,
 		},
 		{
 			name:        "Missing destination",
@@ -78,7 +78,7 @@ func TestHandler_sendCoin(t *testing.T) {
 			},
 			mockBehavior:         func(s *mock_usecase.MockShop, userid int, transactions domain.Transactions) {},
 			expectedStatusCode:   400,
-			expectedResponseBody: `{"message":"Key: 'Transactions.Destination' Error:Field validation for 'Destination' failed on the 'required' tag"}`,
+			expectedResponseBody: `{"message":"Значения получателя и суммы не могут быть отрицательными или пустыми"}`,
 		},
 	}
 	for _, testCase := range testTable {
@@ -155,7 +155,7 @@ func TestHandler_buyItem(t *testing.T) {
 			usecases := &usecase.Usecase{Shop: repo}
 			handler := Handler{usecases}
 			r := gin.New()
-			r.PUT("/api/buy/:name", func(c *gin.Context) {
+			r.PUT("/api/buy/:item", func(c *gin.Context) {
 				c.Set("userId", testCase.inputUserId)
 				handler.buyItem(c)
 			})

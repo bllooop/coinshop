@@ -11,11 +11,13 @@ type Merch struct {
 }
 
 type Transactions struct {
-	Id          int        `json:"-" db:"id"`
-	Source      *int       `json:"source"`
-	Destination string     `json:"destination" binding:"required"`
-	Amount      int        `json:"amount" binding:"required"`
-	Timestamp   *time.Time `json:"timestamp"`
+	Id                  int        `json:"-" db:"id"`
+	Source              *int       `json:"source,omitempty"`
+	SourceUsername      *string    `json:"source_username,omitempty" db:"source_username"`
+	Destination         *int       `json:"destination,omitempty"`
+	DestinationUsername string     `json:"destination_username,omitempty" db:"destination_username"`
+	Amount              int        `json:"amount" binding:"required"`
+	Timestamp           *time.Time `json:"timestamp,omitempty" `
 }
 
 type UserSummary struct {
@@ -26,8 +28,8 @@ type UserSummary struct {
 }
 
 type PurchasedItem struct {
-	ItemName string `json:"item_name"`
-	Quantity int    `json:"quantity"`
+	ItemName string `json:"item_name"  db:"item_name"`
+	Quantity int    `json:"quantity"  db:"quantity"`
 }
 type TransactionsSummary struct {
 	ReceivedCoins []Transactions `json:"received_coins"`

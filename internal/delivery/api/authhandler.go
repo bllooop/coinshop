@@ -47,7 +47,7 @@ func (h *Handler) signIn(c *gin.Context) {
 		})
 		return
 	}
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		defaultCoins := 1000
 		inputCreate.Coins = &defaultCoins
 		id, err := h.usecases.Authorization.CreateUser(inputCreate)

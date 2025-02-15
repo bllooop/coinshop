@@ -37,7 +37,7 @@ func TestAuthPostgres_Create(t *testing.T) {
 			input: domain.User{
 				UserName: "username",
 				Password: "123",
-				Coins:    intPointer(1000),
+				Coins:    IntPointer(1000),
 			},
 			want: 1,
 		},
@@ -51,7 +51,7 @@ func TestAuthPostgres_Create(t *testing.T) {
 			input: domain.User{
 				UserName: "",
 				Password: "123",
-				Coins:    intPointer(1000),
+				Coins:    IntPointer(1000),
 			},
 			wantErr: true,
 		},
@@ -137,6 +137,6 @@ func TestAuthPostgres_SignUser(t *testing.T) {
 	}
 }
 
-func intPointer(s int) *int {
+func IntPointer(s int) *int {
 	return &s
 }

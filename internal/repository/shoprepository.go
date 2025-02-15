@@ -62,7 +62,7 @@ func (r *ShopPostgres) SendCoin(input domain.Transactions) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	var id, amount int
+	var id, destId, amount int
 	getCoinLeft := fmt.Sprintf("SELECT coins FROM %s WHERE id = $1", userListTable)
 	row := tr.QueryRowx(getCoinLeft, input.Source)
 	if err := row.Scan(&amount); err != nil {
@@ -71,8 +71,14 @@ func (r *ShopPostgres) SendCoin(input domain.Transactions) (int, error) {
 	if amount-input.Amount < 0 {
 		return 0, errors.New("количество отправки выше количества текущих монет")
 	}
-	sendMoneyQuery := fmt.Sprintf("UPDATE %s SET coins = coins + $1 WHERE username = $2", userListTable)
-	_, err = tr.Exec(sendMoneyQuery, input.Amount, input.Destination)
+	getDestId := fmt.Sprintf("SELECT id FROM %s WHERE username = $1", userListTable)
+	row = tr.QueryRowx(getDestId, input.DestinationUsername)
+	if err := row.Scan(&destId); err != nil {
+		return 0, err
+	}
+
+	sendMoneyQuery := fmt.Sprintf("UPDATE %s SET coins = coins + $1 WHERE id = $2", userListTable)
+	_, err = tr.Exec(sendMoneyQuery, input.Amount, destId)
 	if err != nil {
 		tr.Rollback()
 		return 0, err
@@ -84,7 +90,7 @@ func (r *ShopPostgres) SendCoin(input domain.Transactions) (int, error) {
 		return 0, err
 	}
 	createListQuery := fmt.Sprintf("INSERT INTO %s (source, destination, amount, transaction_time) VALUES ($1,$2,$3,$4) RETURNING id", transactionsTable)
-	row = tr.QueryRowx(createListQuery, input.Source, input.Destination, input.Amount, input.Timestamp)
+	row = tr.QueryRowx(createListQuery, input.Source, destId, input.Amount, input.Timestamp)
 	if err := row.Scan(&id); err != nil {
 		tr.Rollback()
 		return id, err
@@ -114,10 +120,10 @@ func (s *ShopPostgres) GetUserSummary(userID int) (*domain.UserSummary, error) {
 
 	var receivedCoins []domain.Transactions
 	err = s.db.Select(&receivedCoins, `
-        SELECT t.source, u.username AS destination, t.amount
-        FROM transactions t
-        JOIN userlist u ON t.source = u.id
-        WHERE t.destination = $1
+    SELECT t.source, u.username AS source_username, t.amount
+    FROM transactions t
+    JOIN userlist u ON t.source = u.id
+    WHERE t.destination = $1;
     `, userID)
 	if err != nil {
 		return nil, err
@@ -125,10 +131,10 @@ func (s *ShopPostgres) GetUserSummary(userID int) (*domain.UserSummary, error) {
 
 	var sentCoins []domain.Transactions
 	err = s.db.Select(&sentCoins, `
-        SELECT t.destination, u.username AS source, t.amount
-        FROM transactions t
-        JOIN userlist u ON t.destination = u.id
-        WHERE t.source = $1
+    SELECT t.destination,d.username AS destination_username, t.amount
+    FROM transactions t
+    JOIN userlist d ON t.destination = d.id
+    WHERE t.source = $1;
     `, userID)
 	if err != nil {
 		return nil, err
@@ -145,4 +151,8 @@ func (s *ShopPostgres) GetUserSummary(userID int) (*domain.UserSummary, error) {
 	}
 
 	return userSummary, nil
+}
+
+func (r *ShopPostgres) DB() *sqlx.DB {
+	return r.db
 }

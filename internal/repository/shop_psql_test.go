@@ -145,10 +145,13 @@ func TestShopPostgres_sendCoin(t *testing.T) {
 
 				mock.ExpectQuery(fmt.Sprintf("SELECT coins FROM %s (.+)", userListTable)).
 					WithArgs(1).
-					WillReturnRows(sqlmock.NewRows([]string{"coins"}).AddRow(100))
+					WillReturnRows(sqlmock.NewRows([]string{"coins"}).AddRow(1000))
+				mock.ExpectQuery(fmt.Sprintf("SELECT id FROM %s WHERE (.+)", userListTable)).
+					WithArgs("name").
+					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2))
 
 				mock.ExpectExec(fmt.Sprintf("UPDATE %s SET (.+)", userListTable)).
-					WithArgs(10, "name").
+					WithArgs(10, 2).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 
 				mock.ExpectExec(fmt.Sprintf("UPDATE %s SET (.+)", userListTable)).
@@ -156,15 +159,16 @@ func TestShopPostgres_sendCoin(t *testing.T) {
 					WillReturnResult(sqlmock.NewResult(0, 1))
 
 				mock.ExpectQuery(fmt.Sprintf("INSERT INTO %s (.+)", transactionsTable)).
-					WithArgs(1, "name", 10, sqlmock.AnyArg()).
+					WithArgs(1, 2, 10, sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 				mock.ExpectCommit()
 			},
 			input: domain.Transactions{
-				Source:      intPointer(1),
-				Destination: "name",
-				Amount:      10,
-				Timestamp:   func() *time.Time { t := time.Now(); return &t }(),
+				Source:              IntPointer(1),
+				DestinationUsername: "name",
+				Destination:         IntPointer(2),
+				Amount:              10,
+				Timestamp:           func() *time.Time { t := time.Now(); return &t }(),
 			},
 			want:    1,
 			wantErr: false,
@@ -179,10 +183,11 @@ func TestShopPostgres_sendCoin(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"coins"}).AddRow(10))
 			},
 			input: domain.Transactions{
-				Source:      intPointer(1),
-				Destination: "name",
-				Amount:      10,
-				Timestamp:   func() *time.Time { t := time.Now(); return &t }(),
+				Source:              IntPointer(1),
+				DestinationUsername: "name",
+				Destination:         IntPointer(2),
+				Amount:              10,
+				Timestamp:           func() *time.Time { t := time.Now(); return &t }(),
 			},
 			want:    0,
 			wantErr: true,
@@ -195,9 +200,11 @@ func TestShopPostgres_sendCoin(t *testing.T) {
 				mock.ExpectQuery(fmt.Sprintf("SELECT coins FROM %s (.+)", userListTable)).
 					WithArgs(1).
 					WillReturnRows(sqlmock.NewRows([]string{"coins"}).AddRow(100))
-
+				mock.ExpectQuery(fmt.Sprintf("SELECT id FROM %s WHERE (.+)", userListTable)).
+					WithArgs("name").
+					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2))
 				mock.ExpectExec(fmt.Sprintf("UPDATE %s SET (.+)", userListTable)).
-					WithArgs(10, "name").
+					WithArgs(10, 2).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 
 				mock.ExpectExec(fmt.Sprintf("UPDATE %s SET (.+)", userListTable)).
@@ -205,16 +212,17 @@ func TestShopPostgres_sendCoin(t *testing.T) {
 					WillReturnResult(sqlmock.NewResult(0, 1))
 
 				mock.ExpectQuery(fmt.Sprintf(`INSERT INTO %s (.+)`, transactionsTable)).
-					WithArgs(1, "name", 10, sqlmock.AnyArg()).
+					WithArgs(1, 2, 10, sqlmock.AnyArg()).
 					WillReturnError(errors.New("insert failed"))
 
 				mock.ExpectRollback()
 			},
 			input: domain.Transactions{
-				Source:      intPointer(1),
-				Destination: "name",
-				Amount:      10,
-				Timestamp:   func() *time.Time { t := time.Now(); return &t }(),
+				Source:              IntPointer(1),
+				Destination:         IntPointer(2),
+				DestinationUsername: "name",
+				Amount:              10,
+				Timestamp:           func() *time.Time { t := time.Now(); return &t }(),
 			},
 			want:    0,
 			wantErr: true,

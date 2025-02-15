@@ -26,8 +26,8 @@ func (h *Handler) sendCoin(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if input.Destination == "" || input.Amount < 0 {
-		newErrorResponse(c, http.StatusBadRequest, "Значения получателя и суммы не могут быть отрицательными")
+	if input.DestinationUsername == "" || input.Amount < 0 {
+		newErrorResponse(c, http.StatusBadRequest, "Значения получателя и суммы не могут быть отрицательными или пустыми")
 		return
 	}
 	id, err := h.usecases.Shop.SendCoin(userId, input)
@@ -53,7 +53,7 @@ func (h *Handler) buyItem(c *gin.Context) {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	name := c.Param("name")
+	name := c.Param("item")
 	logger.Log.Debug().Msgf("Успешно прочитаны name: %s", name)
 
 	id, err := h.usecases.Shop.BuyItem(userId, name)

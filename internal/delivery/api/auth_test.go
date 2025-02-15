@@ -77,7 +77,7 @@ func TestHandler_signUp(t *testing.T) {
 			r := gin.New()
 			api := r.Group("/api")
 			auth := api.Group("/auth")
-			auth.POST("/sign-up", handler.signUp)
+			auth.POST("/sign-up", handler.SignUp)
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest("POST", "/api/auth/sign-up",

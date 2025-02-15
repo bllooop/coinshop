@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *Handler) sendCoin(c *gin.Context) {
+func (h *Handler) SendCoin(c *gin.Context) {
 	logger.Log.Info().Msg("Получен запрос на отправку монет")
 	if c.Request.Method != http.MethodPost {
 		newErrorResponse(c, http.StatusBadRequest, "Требуется запрос POST")
@@ -21,6 +21,7 @@ func (h *Handler) sendCoin(c *gin.Context) {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	logger.Log.Debug().Msgf("Успешно прочитано id  %v", userId)
 	var input domain.Transactions
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -30,7 +31,7 @@ func (h *Handler) sendCoin(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "Значения получателя и суммы не могут быть отрицательными или пустыми")
 		return
 	}
-	id, err := h.usecases.Shop.SendCoin(userId, input)
+	id, err := h.Usecases.Shop.SendCoin(userId, input)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -42,7 +43,7 @@ func (h *Handler) sendCoin(c *gin.Context) {
 	})
 }
 
-func (h *Handler) buyItem(c *gin.Context) {
+func (h *Handler) BuyItem(c *gin.Context) {
 	logger.Log.Info().Msg("Получили запрос на покупку товара")
 	if c.Request.Method != http.MethodPut {
 		newErrorResponse(c, http.StatusBadRequest, "Требуется запрос PUT")
@@ -54,9 +55,9 @@ func (h *Handler) buyItem(c *gin.Context) {
 		return
 	}
 	name := c.Param("item")
-	logger.Log.Debug().Msgf("Успешно прочитаны name: %s", name)
+	logger.Log.Debug().Msgf("Успешно прочитаны название предмета %s и id  %v", name, userId)
 
-	id, err := h.usecases.Shop.BuyItem(userId, name)
+	id, err := h.Usecases.Shop.BuyItem(userId, name)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -68,7 +69,7 @@ func (h *Handler) buyItem(c *gin.Context) {
 	})
 }
 
-func (h *Handler) getInfo(c *gin.Context) {
+func (h *Handler) GetInfo(c *gin.Context) {
 	logger.Log.Info().Msg("Получили запрос на информацию о пользователе")
 	if c.Request.Method != http.MethodGet {
 		newErrorResponse(c, http.StatusBadRequest, "Требуется запрос GET")
@@ -79,7 +80,8 @@ func (h *Handler) getInfo(c *gin.Context) {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	lists, err := h.usecases.Shop.GetUserSummary(userId)
+	logger.Log.Debug().Msgf("Успешно прочитано id  %v", userId)
+	lists, err := h.Usecases.Shop.GetUserSummary(userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			newErrorResponse(c, http.StatusNotFound, "User not found")

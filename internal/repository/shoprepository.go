@@ -149,7 +149,7 @@ func (s *ShopPostgres) GetUserSummary(userID int) (*domain.UserSummary, error) {
 			SentCoins:     sentCoins,
 		},
 	}
-
+	logger.Log.Debug().Msg("Успешно совершено получение информации о пользователе")
 	return userSummary, nil
 }
 

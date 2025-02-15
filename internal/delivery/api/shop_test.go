@@ -94,7 +94,7 @@ func TestHandler_sendCoin(t *testing.T) {
 			r := gin.New()
 			r.POST("/api/sendCoin", func(c *gin.Context) {
 				c.Set("userId", testCase.inputUserId)
-				handler.sendCoin(c)
+				handler.SendCoin(c)
 			})
 
 			w := httptest.NewRecorder()
@@ -157,7 +157,7 @@ func TestHandler_buyItem(t *testing.T) {
 			r := gin.New()
 			r.PUT("/api/buy/:item", func(c *gin.Context) {
 				c.Set("userId", testCase.inputUserId)
-				handler.buyItem(c)
+				handler.BuyItem(c)
 			})
 
 			w := httptest.NewRecorder()
@@ -257,7 +257,7 @@ func TestHandler_infoSummary(t *testing.T) {
 			r := gin.New()
 			r.GET("/api/info", func(c *gin.Context) {
 				c.Set("userId", testCase.inputUserId)
-				handler.getInfo(c)
+				handler.GetInfo(c)
 			})
 
 			w := httptest.NewRecorder()

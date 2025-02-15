@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *Handler) signUp(c *gin.Context) {
+func (h *Handler) SignUp(c *gin.Context) {
 	var input domain.User
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -17,7 +17,7 @@ func (h *Handler) signUp(c *gin.Context) {
 	}
 	defaultCoins := 1000
 	input.Coins = &defaultCoins
-	id, err := h.usecases.Authorization.CreateUser(input)
+	id, err := h.Usecases.Authorization.CreateUser(input)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -27,16 +27,16 @@ func (h *Handler) signUp(c *gin.Context) {
 	})
 }
 
-func (h *Handler) signIn(c *gin.Context) {
+func (h *Handler) SignIn(c *gin.Context) {
 	var input domain.SignInInput
 	var inputCreate domain.User
 
 	if err := c.BindJSON(&input); err != nil {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
-	user, err := h.usecases.Authorization.SignUser(input.UserName, input.Password)
+	user, err := h.Usecases.Authorization.SignUser(input.UserName, input.Password)
 	if err == nil {
-		token, err := h.usecases.Authorization.GenerateToken(user.Id)
+		token, err := h.Usecases.Authorization.GenerateToken(user.Id)
 		if err != nil {
 			newErrorResponse(c, http.StatusInternalServerError, "Failed to generate token: "+err.Error())
 			return
@@ -50,12 +50,12 @@ func (h *Handler) signIn(c *gin.Context) {
 	if errors.Is(err, sql.ErrNoRows) {
 		defaultCoins := 1000
 		inputCreate.Coins = &defaultCoins
-		id, err := h.usecases.Authorization.CreateUser(inputCreate)
+		id, err := h.Usecases.Authorization.CreateUser(inputCreate)
 		if err != nil {
 			newErrorResponse(c, http.StatusInternalServerError, err.Error())
 			return
 		}
-		token, tokenErr := h.usecases.Authorization.GenerateToken(id)
+		token, tokenErr := h.Usecases.Authorization.GenerateToken(id)
 		if tokenErr != nil {
 			newErrorResponse(c, http.StatusInternalServerError, "Failed to generate token: "+tokenErr.Error())
 			return

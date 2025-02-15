@@ -7,11 +7,11 @@ import (
 )
 
 type Handler struct {
-	usecases *usecase.Usecase
+	Usecases *usecase.Usecase
 }
 
 func NewHandler(usecases *usecase.Usecase) *Handler {
-	return &Handler{usecases: usecases}
+	return &Handler{Usecases: usecases}
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
@@ -26,15 +26,15 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	{
 		auth := api.Group("/auth")
 		{
-			auth.POST("sign-up", h.signUp)
-			auth.POST("sign-in", h.signIn)
+			auth.POST("sign-up", h.SignUp)
+			auth.POST("sign-in", h.SignIn)
 		}
 		authorized := api.Group("/", h.authIdentity)
 		//authorized.Use(h.AuthMiddleware)
 		{
-			authorized.POST("/sendCoin", h.sendCoin)
-			authorized.GET("/info", h.getInfo)
-			authorized.PUT("/buy/:item", h.buyItem)
+			authorized.POST("/sendCoin", h.SendCoin)
+			authorized.GET("/info", h.GetInfo)
+			authorized.PUT("/buy/:item", h.BuyItem)
 		}
 	}
 	return router

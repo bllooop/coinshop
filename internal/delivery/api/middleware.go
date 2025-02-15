@@ -26,7 +26,7 @@ func (h *Handler) authIdentity(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	userId, err := h.usecases.Authorization.ParseToken(headerSplit[1])
+	userId, err := h.Usecases.Authorization.ParseToken(headerSplit[1])
 	if err != nil {
 		newErrorResponse(c, http.StatusUnauthorized, err.Error())
 		c.Abort()

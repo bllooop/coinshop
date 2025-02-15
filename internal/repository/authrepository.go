@@ -42,3 +42,7 @@ func (r *AuthPostgres) SignUser(username string) (domain.User, error) {
 	}
 	return user, nil
 }
+
+func (r *AuthPostgres) DB() *sqlx.DB {
+	return r.db
+}

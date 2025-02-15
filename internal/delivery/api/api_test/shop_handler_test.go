@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type SendCoinHandlerTestSuite struct {
+type ShopHandlerTestSuite struct {
 	suite.Suite
 	ctx         context.Context
 	pgContainer *PostgresContainer
@@ -29,7 +29,7 @@ type SendCoinHandlerTestSuite struct {
 	handler     *api.Handler
 }
 
-func (suite *SendCoinHandlerTestSuite) SetupSuite() {
+func (suite *ShopHandlerTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	pgContainer, err := CreatePostgresContainer(suite.ctx)
 	assert.NoError(suite.T(), err)
@@ -61,7 +61,6 @@ func (suite *SendCoinHandlerTestSuite) SetupSuite() {
 
 	suite.repository = repository.NewRepository(db)
 
-	// Initialize the usecase with the repository
 	usecases := &usecase.Usecase{
 		Shop: usecase.NewShopUsecase(suite.repository),
 	}
@@ -69,16 +68,16 @@ func (suite *SendCoinHandlerTestSuite) SetupSuite() {
 	suite.handler = &api.Handler{Usecases: usecases}
 }
 
-func (suite *SendCoinHandlerTestSuite) SetupTest() {
+func (suite *ShopHandlerTestSuite) SetupTest() {
 	_, err := suite.db.Exec("TRUNCATE TABLE userlist, transactions,purchases RESTART IDENTITY CASCADE")
 	assert.NoError(suite.T(), err)
 }
 
-func (suite *SendCoinHandlerTestSuite) TearDownSuite() {
+func (suite *ShopHandlerTestSuite) TearDownSuite() {
 	assert.NoError(suite.T(), suite.pgContainer.Terminate(suite.ctx))
 }
 
-func (suite *SendCoinHandlerTestSuite) TestSendCoin() {
+func (suite *ShopHandlerTestSuite) TestSendCoin() {
 
 	_, err := suite.db.Exec("INSERT INTO userlist (id, username, password, coins) VALUES (1, 'name1','password123', 1000), (2, 'name2','password123', 0)")
 	assert.NoError(suite.T(), err)
@@ -117,7 +116,7 @@ func (suite *SendCoinHandlerTestSuite) TestSendCoin() {
 	assert.Equal(suite.T(), 10, recipientCoins)
 }
 
-func (suite *SendCoinHandlerTestSuite) TestBuyItem() {
+func (suite *ShopHandlerTestSuite) TestBuyItem() {
 
 	_, err := suite.db.Exec("INSERT INTO userlist (id, username, password, coins) VALUES (1, 'name1','password123', 1000)")
 	assert.NoError(suite.T(), err)
@@ -147,7 +146,7 @@ func (suite *SendCoinHandlerTestSuite) TestBuyItem() {
 	assert.Equal(suite.T(), 920, buyerCoins)
 }
 
-func (suite *SendCoinHandlerTestSuite) TestGetInfo() {
+func (suite *ShopHandlerTestSuite) TestGetInfo() {
 
 	_, err := suite.db.Exec("INSERT INTO userlist (username, coins, password) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING",
 		"name", 1000, "password123")
@@ -196,7 +195,7 @@ func (suite *SendCoinHandlerTestSuite) TestGetInfo() {
 }
 
 func TestSendCoinHandlerTestSuite(t *testing.T) {
-	suite.Run(t, new(SendCoinHandlerTestSuite))
+	suite.Run(t, new(ShopHandlerTestSuite))
 }
 
 func IntPointer(s int) *int {

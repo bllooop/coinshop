@@ -33,7 +33,7 @@ type tokenClaims struct {
 
 func (s *AuthUsecase) CreateUser(user domain.User) (int, error) {
 	var err error
-	user.Password, err = hashPassword(user.Password)
+	user.Password, err = HashPassword(user.Password)
 	if err != nil {
 		return 0, err
 	}
@@ -80,7 +80,7 @@ func (s *AuthUsecase) ParseToken(accessToken string) (int, error) {
 	return claims.UserId, nil
 }
 
-func hashPassword(password string) (string, error) {
+func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }

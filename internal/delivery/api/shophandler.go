@@ -52,7 +52,7 @@ func (h *Handler) SendCoin(c *gin.Context) {
 
 func (h *Handler) BuyItem(c *gin.Context) {
 	logger.Log.Info().Msg("Получили запрос на покупку товара")
-	if c.Request.Method != http.MethodPut {
+	if c.Request.Method != "PUT" {
 		logger.Log.Error().Msg("Требуется запрос PUT")
 		newErrorResponse(c, http.StatusBadRequest, "Требуется запрос PUT")
 		return

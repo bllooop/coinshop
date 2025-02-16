@@ -72,7 +72,7 @@ curl --location --request POST 'http://localhost:8080/api/sendCoin' \
 --header 'Authorization:  Bearer {token}' \
 --data '{
     "destination_username": "{user}",
-    "amount": 100
+    "amount": {100}
 }'
 ```
 Вместо user в поле нужно ввести никнейм пользователя, которому нужно отправить монеты, а в поле amount количество монет. После успешнего выполнения запроса будет выведен id транзакции.

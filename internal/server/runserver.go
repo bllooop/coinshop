@@ -69,7 +69,7 @@ func Run() {
 
 	go func() {
 		logger.Log.Info().Msg("Запуск сервера...")
-		if err := srv.RunServer(os.Getenv("SERVERPORT"), handler.InitRoutes()); err != nil && err == http.ErrServerClosed {
+		if err := srv.RunServer(viper.GetString("port"), handler.InitRoutes()); err != nil && err == http.ErrServerClosed {
 			logger.Log.Info().Msg("Сервер был закрыт аккуратно")
 		} else {
 			logger.Log.Error().Err(err).Msg("")

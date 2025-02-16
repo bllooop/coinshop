@@ -42,7 +42,7 @@ func TestHandler_signUp(t *testing.T) {
 			expectedResponseBody: `{"id":1}`,
 		},
 		{
-			name:      "Error during execution in service",
+			name:      "Ошибка выполнения запроса",
 			inputBody: `{"username": "test", "password":"12345"}`,
 			inputUser: domain.User{
 				UserName: "test",
@@ -56,7 +56,7 @@ func TestHandler_signUp(t *testing.T) {
 			expectedResponseBody: `{"message":"Internal Server Error"}`,
 		},
 		{
-			name:                 "Bad input",
+			name:                 "Плохой ввод",
 			inputBody:            `{"username":1000}`,
 			inputUser:            domain.User{},
 			mockBehavior:         func(s *mock_usecase.MockAuthorization, user domain.User) {},
@@ -107,7 +107,7 @@ func TestHandler_signIn(t *testing.T) {
 		expectedResponseBody string
 	}{
 		{
-			name:      "Successful SignIn",
+			name:      "OK",
 			inputBody: `{"username":"name", "password":"12345"}`,
 			username:  "name",
 			password:  "12345",
@@ -119,7 +119,7 @@ func TestHandler_signIn(t *testing.T) {
 			expectedResponseBody: `{"token":"valid.jwt.token"}`,
 		},
 		{
-			name:      "User Not Found - New Account Created",
+			name:      "Пользователь не найден - регистрация",
 			inputBody: `{"username":"notname", "password":"password123"}`,
 			username:  "notname",
 			password:  "password123",
@@ -139,7 +139,7 @@ func TestHandler_signIn(t *testing.T) {
 			expectedResponseBody: `{"message":"Key: 'SignInInput.UserName' Error:Field validation for 'UserName' failed on the 'required' tag\nKey: 'SignInInput.Password' Error:Field validation for 'Password' failed on the 'required' tag"}`,
 		},
 		{
-			name:      "SignUser Error",
+			name:      "Ошибка авторизации",
 			inputBody: `{"username":"test", "password":"12345"}`,
 			username:  "test",
 			password:  "12345",

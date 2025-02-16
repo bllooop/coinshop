@@ -61,7 +61,7 @@ func TestShopPostgres_BuyItem(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Error during execution (Insufficient funds)",
+			name: "Недостаточно средств",
 			mock: func() {
 				mock.ExpectBegin()
 
@@ -83,7 +83,7 @@ func TestShopPostgres_BuyItem(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Error during execution (Item not found)",
+			name: "Предмет не найден",
 			mock: func() {
 				mock.ExpectBegin()
 
@@ -174,7 +174,7 @@ func TestShopPostgres_sendCoin(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Error during execution (Insufficient funds)",
+			name: "Недостаточно средств",
 			mock: func() {
 				mock.ExpectBegin()
 
@@ -193,7 +193,7 @@ func TestShopPostgres_sendCoin(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Error - Insert Transaction Fails",
+			name: "Ошибка транзакции",
 			mock: func() {
 				mock.ExpectBegin()
 

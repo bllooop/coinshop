@@ -45,7 +45,7 @@ func (s *AuthUsecase) SignUser(username, password string) (domain.User, error) {
 		return domain.User{}, err
 	}
 	if !verifyPassword(user.Password, password) {
-		return domain.User{}, errors.New("invalid credentials")
+		return domain.User{}, errors.New("неккоретные данные")
 	}
 	return user, nil
 }

@@ -26,6 +26,11 @@ func (h *Handler) authIdentity(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	if headerSplit[1] == "" {
+		newErrorResponse(c, http.StatusUnauthorized, "Токен пуст")
+		c.Abort()
+		return
+	}
 	userId, err := h.Usecases.Authorization.ParseToken(headerSplit[1])
 	if err != nil {
 		newErrorResponse(c, http.StatusUnauthorized, err.Error())

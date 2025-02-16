@@ -1,8 +1,8 @@
 package api
 
-/*
 import (
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -34,46 +34,37 @@ func TestHandler_authIdentity(t *testing.T) {
 			mockBehavior: func(r *mock_usecase.MockAuthorization, token string) {
 				r.EXPECT().ParseToken(token).Return(1, nil)
 			},
-			expectedStatusCode:   200,
+			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: "1",
 		},
 		{
-			name:                 "Invalid Header Name",
+			name:                 "Некорректное значение заголовка",
 			headerName:           "",
 			headerValue:          "Bearer token",
 			token:                "token",
 			mockBehavior:         func(r *mock_usecase.MockAuthorization, token string) {},
-			expectedStatusCode:   401,
+			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: `{"message":"Пустой заголовок авторизации"}`,
 		},
 		{
-			name:                 "Invalid Header Value",
-			headerName:           "Authorization",
-			headerValue:          "Bearr token",
-			token:                "token",
-			mockBehavior:         func(r *mock_usecase.MockAuthorization, token string) {},
-			expectedStatusCode:   401,
-			expectedResponseBody: `{"message":"invalid auth header"}`,
-		},
-		{
-			name:                 "Empty Token",
+			name:                 "Пустой токен",
 			headerName:           "Authorization",
 			headerValue:          "Bearer ",
 			token:                "token",
 			mockBehavior:         func(r *mock_usecase.MockAuthorization, token string) {},
-			expectedStatusCode:   401,
-			expectedResponseBody: `{"message":"token is empty"}`,
+			expectedStatusCode:   http.StatusUnauthorized,
+			expectedResponseBody: `{"message":"Токен пуст"}`,
 		},
 		{
-			name:        "Parse Error",
+			name:        "Ошибка выдачи токена",
 			headerName:  "Authorization",
 			headerValue: "Bearer token",
 			token:       "token",
 			mockBehavior: func(r *mock_usecase.MockAuthorization, token string) {
-				r.EXPECT().ParseToken(token).Return(0, errors.New("invalid token"))
+				r.EXPECT().ParseToken(token).Return(0, errors.New("Некорректный ввод токена"))
 			},
-			expectedStatusCode:   401,
-			expectedResponseBody: `{"message":"invalid token"}`,
+			expectedStatusCode:   http.StatusUnauthorized,
+			expectedResponseBody: `{"message":"Некорректный ввод токена"}`,
 		},
 	}
 
@@ -91,7 +82,7 @@ func TestHandler_authIdentity(t *testing.T) {
 			r := gin.New()
 			r.GET("/identity", handler.authIdentity, func(c *gin.Context) {
 				id, _ := c.Get(userCtx)
-				c.String(200, "%d", id)
+				c.String(http.StatusOK, "%d", id)
 			})
 
 			w := httptest.NewRecorder()
@@ -99,19 +90,14 @@ func TestHandler_authIdentity(t *testing.T) {
 			req.Header.Set(test.headerName, test.headerValue)
 
 			r.ServeHTTP(w, req)
-			assert.Equal(t, w.Code, test.expectedStatusCode)
-			assert.Equal(t, w.Body.String(), test.expectedResponseBody)
+
+			assert.Equal(t, test.expectedStatusCode, w.Code)
+			assert.JSONEq(t, test.expectedResponseBody, w.Body.String())
 		})
 	}
 }
 
 func TestGetUserId(t *testing.T) {
-	var getContext = func(id int) *gin.Context {
-		ctx := &gin.Context{}
-		ctx.Set(userCtx, id)
-		return ctx
-	}
-
 	testTable := []struct {
 		name       string
 		ctx        *gin.Context
@@ -120,12 +106,21 @@ func TestGetUserId(t *testing.T) {
 	}{
 		{
 			name: "Ok",
-			ctx:  getContext(1),
-			id:   1,
+			ctx: func() *gin.Context {
+				w := httptest.NewRecorder()
+				c, _ := gin.CreateTestContext(w)
+				c.Set(userCtx, 1)
+				return c
+			}(),
+			id: 1,
 		},
 		{
-			ctx:        &gin.Context{},
-			name:       "Empty",
+			name: "Пусто",
+			ctx: func() *gin.Context {
+				w := httptest.NewRecorder()
+				c, _ := gin.CreateTestContext(w)
+				return c
+			}(),
 			shouldFail: true,
 		},
 	}
@@ -138,10 +133,7 @@ func TestGetUserId(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-
-			assert.Equal(t, id, test.id)
+			assert.Equal(t, test.id, id)
 		})
 	}
 }
-
-*/

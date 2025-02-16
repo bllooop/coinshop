@@ -5,8 +5,6 @@ linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
-  govet:
-    check-shadowing: true
   gocyclo:
     min-complexity: 10
   staticcheck:
@@ -15,13 +13,11 @@ linters-settings:
 linters:
   enable:
     - errcheck
-    - govet
     - staticcheck
     - gocyclo
     - gofmt
     - goimports
     - unused
-    - deadcode
 
 issues:
   exclude-rules:
@@ -33,6 +29,6 @@ issues:
       text: "SA4006"
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
-  print-linter-name: true

@@ -42,7 +42,7 @@ func TestAuthPostgres_Create(t *testing.T) {
 			want: 1,
 		},
 		{
-			name: "Empty input fields",
+			name: "Пустые поля вводных данных",
 			mock: func() {
 				rows := sqlmock.NewRows([]string{"id"})
 				mock.ExpectQuery("INSERT INTO userlist").
@@ -110,7 +110,7 @@ func TestAuthPostgres_SignUser(t *testing.T) {
 			},
 		},
 		{
-			name: "Not Found",
+			name: "Пользователь не найден",
 			mock: func() {
 				rows := sqlmock.NewRows([]string{"id", "username", "password", "coins"})
 				mock.ExpectQuery(fmt.Sprintf("SELECT (.+) FROM %s", userListTable)).

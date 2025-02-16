@@ -44,7 +44,7 @@ func TestHandler_sendCoin(t *testing.T) {
 			expectedResponseBody: `{"id":1}`,
 		},
 		{
-			name:        "Error during execution in service",
+			name:        "Ошибка во время выполнения запроса",
 			inputBody:   `{"destination_username":"name", "amount":10}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
@@ -58,7 +58,7 @@ func TestHandler_sendCoin(t *testing.T) {
 			expectedResponseBody: `{"message":"Internal Server Error"}`,
 		},
 		{
-			name:        "Bad input",
+			name:        "Плохой ввод",
 			inputBody:   `{"amount":-100, "destination_username":"name"}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
@@ -70,7 +70,7 @@ func TestHandler_sendCoin(t *testing.T) {
 			expectedResponseBody: `{"message":"Значения получателя и суммы не могут быть отрицательными или пустыми"}`,
 		},
 		{
-			name:        "Missing destination",
+			name:        "Отсутствует получатель",
 			inputBody:   `{"amount":10}`,
 			inputUserId: 1,
 			inputTransactions: domain.Transactions{
@@ -134,7 +134,7 @@ func TestHandler_buyItem(t *testing.T) {
 			expectedResponseBody: `{"id":1}`,
 		},
 		{
-			name:        "Error during execution in service",
+			name:        "Ошибка выполнения запроса",
 			inputName:   "cup",
 			inputUserId: 1,
 			mockBehavior: func(s *mock_usecase.MockShop, name string, userId int) {
@@ -210,7 +210,7 @@ func TestHandler_infoSummary(t *testing.T) {
 			}`,
 		},
 		{
-			name:        "Database Failure",
+			name:        "Ошибка базы данных",
 			inputUserId: 1,
 			mockBehavior: func(s *mock_usecase.MockShop, userId int) {
 				s.EXPECT().GetUserSummary(userId).Return(&domain.UserSummary{
@@ -227,7 +227,7 @@ func TestHandler_infoSummary(t *testing.T) {
 			expectedResponseBody: `{"message":"database is down"}`,
 		},
 		{
-			name:        "User not found",
+			name:        "Пользователь не найден",
 			inputUserId: 9999,
 			mockBehavior: func(s *mock_usecase.MockShop, userId int) {
 				s.EXPECT().GetUserSummary(userId).Return(&domain.UserSummary{

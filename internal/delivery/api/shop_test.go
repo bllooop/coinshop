@@ -241,7 +241,7 @@ func TestHandler_infoSummary(t *testing.T) {
 				}, sql.ErrNoRows)
 			},
 			expectedStatusCode:   404,
-			expectedResponseBody: `{"message":"User not found"}`,
+			expectedResponseBody: `{"message":"Пользователь не найден"}`,
 		},
 	}
 	for _, testCase := range testTable {

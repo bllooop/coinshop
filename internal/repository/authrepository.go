@@ -36,7 +36,7 @@ func (r *AuthPostgres) SignUser(username string) (domain.User, error) {
 	err := res.Scan(&user.Id, &user.UserName, &user.Password)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.User{}, errors.New("user not found")
+			return domain.User{}, errors.New("пользователь не найден")
 		}
 		return domain.User{}, err
 	}

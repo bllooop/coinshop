@@ -44,7 +44,7 @@ func Run() {
 
 	migratePath := "./migrations"
 	logger.Log.Debug().Msgf("Running database migrations from path: %s", migratePath)
-	if err := repository.RunMigrate(repository.Config{
+	if err = repository.RunMigrate(repository.Config{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetString("db.port"),
 		Username: viper.GetString("db.username"),

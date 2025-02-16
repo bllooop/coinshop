@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
@@ -110,10 +109,10 @@ func TestHandler_signIn(t *testing.T) {
 		{
 			name:      "Successful SignIn",
 			inputBody: `{"username":"name", "password":"12345"}`,
-			username:  "test",
+			username:  "name",
 			password:  "12345",
 			mockBehavior: func(s *mock_usecase.MockAuthorization, username, password string) {
-				s.EXPECT().SignUser(username, password).Return(domain.User{Id: 1}, nil)
+				s.EXPECT().SignUser("name", "12345").Return(domain.User{Id: 1}, nil)
 				s.EXPECT().GenerateToken(1).Return("valid.jwt.token", nil)
 			},
 			expectedStatusCode:   200,
@@ -122,11 +121,11 @@ func TestHandler_signIn(t *testing.T) {
 		{
 			name:      "User Not Found - New Account Created",
 			inputBody: `{"username":"notname", "password":"password123"}`,
-			username:  "newuser",
+			username:  "notname",
 			password:  "password123",
 			mockBehavior: func(s *mock_usecase.MockAuthorization, username, password string) {
-				s.EXPECT().SignUser(username, password).Return(domain.User{}, sql.ErrNoRows)
-				s.EXPECT().CreateUser(domain.User{UserName: username, Password: password, Coins: intPointer(1000)}).Return(2, nil)
+				s.EXPECT().SignUser("notname", "password123").Return(domain.User{}, errors.New("пользователь не найден"))
+				s.EXPECT().CreateUser(domain.User{UserName: "notname", Password: "password123", Coins: intPointer(1000)}).Return(2, nil)
 				s.EXPECT().GenerateToken(2).Return("newuser.jwt.token", nil)
 			},
 			expectedStatusCode:   200,
@@ -137,18 +136,18 @@ func TestHandler_signIn(t *testing.T) {
 			inputBody:            `{"name":1000}`,
 			mockBehavior:         func(s *mock_usecase.MockAuthorization, username, password string) {},
 			expectedStatusCode:   400,
-			expectedResponseBody: `{"message":"json: cannot unmarshal number into Go struct field SignInInput.username of type string"}`,
+			expectedResponseBody: `{"message":"Key: 'SignInInput.UserName' Error:Field validation for 'UserName' failed on the 'required' tag\nKey: 'SignInInput.Password' Error:Field validation for 'Password' failed on the 'required' tag"}`,
 		},
 		{
 			name:      "SignUser Error",
-			inputBody: `{"name":"test", "password":"12345"}`,
+			inputBody: `{"username":"test", "password":"12345"}`,
 			username:  "test",
 			password:  "12345",
 			mockBehavior: func(s *mock_usecase.MockAuthorization, username, password string) {
-				s.EXPECT().SignUser(username, password).Return(domain.User{}, errors.New("Internal Server Error"))
+				s.EXPECT().SignUser("test", "12345").Return(domain.User{}, errors.New("Internal Server Error"))
 			},
 			expectedStatusCode:   500,
-			expectedResponseBody: `{"message":"Error checking user: Internal Server Error"}`,
+			expectedResponseBody: `{"message":"Ошибка авторизации: Internal Server Error"}`,
 		},
 	}
 
@@ -166,11 +165,12 @@ func TestHandler_signIn(t *testing.T) {
 			r.POST("/api/auth/sign-in", handler.SignIn)
 
 			w := httptest.NewRecorder()
-			req := httptest.NewRequest("POST", "/api/auth/sign-in",
-				bytes.NewBufferString(testCase.inputBody))
+			req := httptest.NewRequest("POST", "/api/auth/sign-in", bytes.NewBufferString(testCase.inputBody))
 
 			r.ServeHTTP(w, req)
 			assert.Equal(t, testCase.expectedStatusCode, w.Code)
+
+			// Check if the response body is valid JSON
 			if json.Valid([]byte(testCase.expectedResponseBody)) {
 				assert.JSONEq(t, testCase.expectedResponseBody, w.Body.String())
 			} else {

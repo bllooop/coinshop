@@ -22,6 +22,5 @@ services:
       - POSTGRES_PASSWORD=54321
     ports:
       - 5436:5432
-
 volumes:
   pgdata:

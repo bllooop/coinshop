@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -25,16 +26,21 @@ func (r *ShopPostgres) BuyItem(userid int, name string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer tr.Rollback()
+	defer tr.Rollback() // nolint:errcheck
+
 	var id, itemID, price, amount int
 	getIdQuery := fmt.Sprintf("SELECT id, price FROM %s WHERE name = $1", shopTable)
 	row := tr.QueryRowx(getIdQuery, name)
-	if err := row.Scan(&itemID, &price); err != nil {
+	if err = row.Scan(&itemID, &price); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, errors.New("товар не найден")
+		}
+
 		return 0, err
 	}
 	getCoinLeft := fmt.Sprintf("SELECT coins FROM %s WHERE id = $1", userListTable)
 	row = tr.QueryRowx(getCoinLeft, userid)
-	if err := row.Scan(&amount); err != nil {
+	if err = row.Scan(&amount); err != nil {
 		return 0, err
 	}
 	if amount-price < 0 {
@@ -42,14 +48,20 @@ func (r *ShopPostgres) BuyItem(userid int, name string) (int, error) {
 	}
 	createListQuery := fmt.Sprintf("INSERT INTO %s (user_id, item_id, price, purchase_date) VALUES ($1,$2,$3,$4) RETURNING id", purchaseTable)
 	row = tr.QueryRowx(createListQuery, userid, itemID, price, time.Now())
-	if err := row.Scan(&id); err != nil {
-		tr.Rollback()
+	if err = row.Scan(&id); err != nil {
+		rollbackErr := tr.Rollback()
+		if rollbackErr != nil {
+			logger.Log.Error().Err(rollbackErr).Msg("Error during rollback")
+		}
 		return id, err
 	}
 	changeAmountQuery := fmt.Sprintf("UPDATE %s SET coins = $1 WHERE id = $2", userListTable)
 	_, err = tr.Exec(changeAmountQuery, amount-price, userid)
 	if err != nil {
-		tr.Rollback()
+		rollbackErr := tr.Rollback()
+		if rollbackErr != nil {
+			logger.Log.Error().Err(rollbackErr).Msg("Error during rollback")
+		}
 		return 0, err
 	}
 	logger.Log.Debug().Int("id", id).Msg("Успешно совершена покупка товара")
@@ -57,46 +69,87 @@ func (r *ShopPostgres) BuyItem(userid int, name string) (int, error) {
 }
 
 func (r *ShopPostgres) SendCoin(input domain.Transactions) (int, error) {
-	tr, err := r.db.Beginx()
-
+	tr, err := r.beginTransaction()
 	if err != nil {
 		return 0, err
 	}
-	var id, destId, amount int
-	getCoinLeft := fmt.Sprintf("SELECT coins FROM %s WHERE id = $1", userListTable)
-	row := tr.QueryRowx(getCoinLeft, input.Source)
-	if err := row.Scan(&amount); err != nil {
+	defer tr.Rollback() // nolint:errcheck
+
+	amount, err := r.getSourceCoinAmount(tr, *input.Source)
+	if err != nil {
 		return 0, err
 	}
+
 	if amount-input.Amount < 0 {
 		return 0, errors.New("количество отправки выше количества текущих монет")
 	}
-	getDestId := fmt.Sprintf("SELECT id FROM %s WHERE username = $1", userListTable)
-	row = tr.QueryRowx(getDestId, input.DestinationUsername)
-	if err := row.Scan(&destId); err != nil {
+
+	destId, err := r.getDestinationUserId(tr, input.DestinationUsername)
+	if err != nil {
+		return 0, err
+	}
+	input.Destination = &destId
+	if err = r.transferCoins(tr, input.Amount, destId, *input.Source); err != nil {
 		return 0, err
 	}
 
-	sendMoneyQuery := fmt.Sprintf("UPDATE %s SET coins = coins + $1 WHERE id = $2", userListTable)
-	_, err = tr.Exec(sendMoneyQuery, input.Amount, destId)
+	id, err := r.createTransaction(tr, input)
 	if err != nil {
-		tr.Rollback()
 		return 0, err
 	}
-	changeAmountQuery := fmt.Sprintf("UPDATE %s SET coins = coins - $1 WHERE id = $2", userListTable)
-	_, err = tr.Exec(changeAmountQuery, input.Amount, input.Source)
-	if err != nil {
-		tr.Rollback()
-		return 0, err
-	}
-	createListQuery := fmt.Sprintf("INSERT INTO %s (source, destination, amount, transaction_time) VALUES ($1,$2,$3,$4) RETURNING id", transactionsTable)
-	row = tr.QueryRowx(createListQuery, input.Source, destId, input.Amount, input.Timestamp)
-	if err := row.Scan(&id); err != nil {
-		tr.Rollback()
-		return id, err
-	}
+
 	logger.Log.Debug().Int("id", id).Msg("Успешно совершена отправка момент")
 	return id, tr.Commit()
+}
+
+func (r *ShopPostgres) beginTransaction() (*sqlx.Tx, error) {
+	tr, err := r.db.Beginx()
+	if err != nil {
+		return nil, err
+	}
+	return tr, nil
+}
+
+func (r *ShopPostgres) getSourceCoinAmount(tr *sqlx.Tx, userId int) (int, error) {
+	var amount int
+	getCoinLeft := fmt.Sprintf("SELECT coins FROM %s WHERE id = $1", userListTable)
+	row := tr.QueryRowx(getCoinLeft, userId)
+	if err := row.Scan(&amount); err != nil {
+		return 0, err
+	}
+	return amount, nil
+}
+
+func (r *ShopPostgres) getDestinationUserId(tr *sqlx.Tx, username string) (int, error) {
+	var destId int
+	getDestId := fmt.Sprintf("SELECT id FROM %s WHERE username = $1", userListTable)
+	row := tr.QueryRowx(getDestId, username)
+	if err := row.Scan(&destId); err != nil {
+		return 0, err
+	}
+	return destId, nil
+}
+
+func (r *ShopPostgres) transferCoins(tr *sqlx.Tx, amount, destId, sourceId int) error {
+	sendMoneyQuery := fmt.Sprintf("UPDATE %s SET coins = coins + $1 WHERE id = $2", userListTable)
+	_, err := tr.Exec(sendMoneyQuery, amount, destId)
+	if err != nil {
+		return err
+	}
+
+	changeAmountQuery := fmt.Sprintf("UPDATE %s SET coins = coins - $1 WHERE id = $2", userListTable)
+	_, err = tr.Exec(changeAmountQuery, amount, sourceId)
+	return err
+}
+
+func (r *ShopPostgres) createTransaction(tr *sqlx.Tx, input domain.Transactions) (int, error) {
+	createListQuery := fmt.Sprintf("INSERT INTO %s (source, destination, amount, transaction_time) VALUES ($1,$2,$3,$4) RETURNING id", transactionsTable)
+	row := tr.QueryRowx(createListQuery, input.Source, input.Destination, input.Amount, input.Timestamp)
+	var id int
+	if err := row.Scan(&id); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 func (s *ShopPostgres) GetUserSummary(userID int) (*domain.UserSummary, error) {
